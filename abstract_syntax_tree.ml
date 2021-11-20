@@ -13,7 +13,7 @@ type questExp =
     | InteractActionExp of paramExp
     | LetExp of string * paramExp (* let x = Location *)
     | DataExp of (string * paramExp) list (* (x = Location, y = Potion) *)
-    | QuestExp of (paramExp list) * (questExp list)
+    | QuestExp of questExp list
     | SubquestExp of string * (paramExp list) * (questExp list)
     | RunSubquestExp of string * (paramExp list)
 
@@ -74,7 +74,6 @@ let subquestAST = SubquestExp ("RoundTrip",
     ])
 
 let exampleQuestAST2 = QuestExp (
-    [],
     [
         RunSubquestExp ("RoundTrip", [LocationLiteralExp "Desert"; ItemLiteralExp "Sword"]);
         KillActionExp (NPCLiteralExp "Wolf")
