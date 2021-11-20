@@ -1,19 +1,26 @@
-type literalExp =
+type paramExp =
+    | IdentifierExp of string
     | LocationLiteralExp of string
     | ItemLiteralExp of string
     | NPCLiteralExp of string
+    | GetLoc of paramExp
 
 type questExp =
-    | RequireActionExp of literalExp
-    | GotoActionExp of literalExp
-    | GetActionExp of literalExp
-    | KillActionExp of literalExp
-    | InteractActionExp of literalExp
+    | RequireActionExp of paramExp
+    | GotoActionExp of paramExp
+    | GetActionExp of paramExp
+    | KillActionExp of paramExp
+    | InteractActionExp of paramExp
+    | LetExp of string * paramExp (* let x = Location *)
+    | DataExp of (string * paramExp) list (* (x = Location, y = Potion) *)
+    | QuestExp of (paramExp list) * (questExp list)
+    | SubquestExp of string * (paramExp list) * (questExp list)
+    | RunSubquestExp of string * (paramExp list)
 
 type worldObjExp =
-    | NPCWorldExp of literalExp * literalExp
-    | ItemWorldExp of literalExp * literalExp
-    | LocationWorldExp of literalExp
+    | NPCWorldExp of paramExp * paramExp
+    | ItemWorldExp of paramExp * paramExp
+    | LocationWorldExp of paramExp
 
 let exampleWorldAST = [
     LocationWorldExp (LocationLiteralExp "Forest");
@@ -43,4 +50,33 @@ Quest
     get Sword
     goto Forest
     kill Wolf
+
+hypotheticals:
+
+Subquest RoundTrip (location, item)
+    let firstLoc = getloc Player
+    goto location
+    get item
+    goto firstLoc
+
+Quest
+    RoundTrip (Desert, Sword)
+    kill Wolf
 *)
+
+let subquestAST = SubquestExp ("RoundTrip",
+    [IdentifierExp "location"; IdentifierExp "item"],
+    [
+        LetExp ("firstLoc", GetLoc (NPCLiteralExp "Player"));
+        GotoActionExp (IdentifierExp "location");
+        GetActionExp (IdentifierExp "item");
+        GotoActionExp (IdentifierExp "firstLoc")
+    ])
+
+let exampleQuestAST2 = QuestExp (
+    [],
+    [
+        RunSubquestExp ("RoundTrip", [LocationLiteralExp "Desert"; ItemLiteralExp "Sword"]);
+        KillActionExp (NPCLiteralExp "Wolf")
+    ]
+)
