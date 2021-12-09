@@ -1,5 +1,7 @@
+TODO: Explain what the tool actually does
+
 To use this tool:
-1. create a new OCaml (`.ml`) file in this directory (e.g. `my_file.ml`)
+1. Create a new OCaml (`.ml`) file in this directory (e.g. `my_file.ml`)
 2. At the beginning of the file add the 2 lines:
 ```
 open Abstract_syntax_tree;;
