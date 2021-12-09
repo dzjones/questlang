@@ -1,41 +1,51 @@
+type var = string
+
+(* support for checking types of arguments passed to subquests
+type dataType =
+    | LocationTy
+    | ItemTy
+    | CharTy
+
+type formalArg = dataType * var
+*)
+
+type locatonId = LocationLiteral of string | NullLocation
+type characterId = NPCLiteral of string | PlayerC
+type itemId = string
+type subquestId = string
+
 type paramExp =
-    | IdentifierExp of string
-    | LocationLiteralExp of string
-    | ItemLiteralExp of string
-    | NPCLiteralExp of string
-    | GetLoc of paramExp
+    | VarExp of var
+    | LocationExp of locatonId
+    | ItemExp of itemId
+    | CharExp of characterId
+    | GetCharLoc of characterId
+    | GetItemLoc of itemId
+
+type worldEntry =
+    | CharWorldEntry of characterId * locatonId
+    | ItemWorldEntry of itemId * locatonId
+    | LocationWorldEntry of locatonId
+
+type subquestEntry = subquestId * (var list) * (questExp list)
+
+type unaryAction =
+    | Require
+    | Goto
+    | Get
+    | Kill
+    | Interact
 
 type questExp =
-    | RequireActionExp of paramExp
-    | GotoActionExp of paramExp
-    | GetActionExp of paramExp
-    | KillActionExp of paramExp
-    | InteractActionExp of paramExp
-    | LetExp of string * paramExp (* let x = Location *)
-    | DataExp of (string * paramExp) list (* (x = Location, y = Potion) *)
-    | QuestExp of questExp list
-    | SubquestExp of string * (paramExp list) * (questExp list)
-    | RunSubquestExp of string * (paramExp list)
+    | ActionExp of unaryAction * paramExp
+    | LetExp of var * paramExp
+    | RunSubquestExp of subquestId * (paramExp list)
 
-type worldObjExp =
-    | NPCWorldExp of paramExp * paramExp
-    | ItemWorldExp of paramExp * paramExp
-    | LocationWorldExp of paramExp
-
-let exampleWorldAST = [
-    LocationWorldExp (LocationLiteralExp "Forest");
-    LocationWorldExp (LocationLiteralExp "Desert");
-    NPCWorldExp (NPCLiteralExp "Player", LocationLiteralExp "Forest");
-    NPCWorldExp (NPCLiteralExp "Wolf", LocationLiteralExp "Forest");
-    ItemWorldExp (ItemLiteralExp "Sword", LocationLiteralExp "Desert");
-]
-
-let exampleQuestAST = [
-    GotoActionExp (LocationLiteralExp "Desert");
-    GetActionExp (ItemLiteralExp "Sword");
-    GotoActionExp (LocationLiteralExp "Forest");
-    KillActionExp (NPCLiteralExp "Wolf");
-]
+type _AST = {
+    world : worldEntry list
+    subquests : subquestEntry list
+    mainQuest : questExp list
+}
 
 (*
 World
@@ -64,18 +74,45 @@ Quest
     kill Wolf
 *)
 
-let subquestAST = SubquestExp ("RoundTrip",
-    [IdentifierExp "location"; IdentifierExp "item"],
+let exampleWorldAST = [
+    LocationWorldEntry (LocationLiteral "Forest");
+    LocationWorldEntry (LocationLiteral "Desert");
+    CharWorldEntry (PlayerC, LocationLiteral "Forest")
+    CharWorldEntry (NPCLiteral "Wolf", LocationLiteral "Forest");
+    ItemWorldEntry ("Sword", LocationLiteral "Desert");
+]
+
+let exampleQuestAST = [
+    ActionExp (Goto, (LocationExp (LocationLiteral "Desert")));
+    ActionExp (Get, (ItemLiteralExp "Sword"));
+    ActionExp (Goto, (LocationExp (LocationLiteral "Forest")));
+    ActionExp (Kill, (CharExp (NPCLiteral "Wolf")));
+]
+
+let subquestAST = "RoundTrip",
+    ["loc"; "item"],
     [
-        LetExp ("firstLoc", GetLoc (NPCLiteralExp "Player"));
-        GotoActionExp (IdentifierExp "location");
-        GetActionExp (IdentifierExp "item");
-        GotoActionExp (IdentifierExp "firstLoc")
-    ])
+        LetExp ("initial", GetCharLoc Player);
+        ActionExp (Goto, (VarExp "loc"));
+        ActionExp (Get, (VarExp "item"));
+        ActionExp (Goto, (VarExp "initial"))
+    ]
 
 let exampleQuestAST2 = QuestExp (
     [
-        RunSubquestExp ("RoundTrip", [LocationLiteralExp "Desert"; ItemLiteralExp "Sword"]);
-        KillActionExp (NPCLiteralExp "Wolf")
+        RunSubquestExp ("RoundTrip", [LocationExp (LocationLiteral "Desert"); ItemExp "Sword"]);
+        ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
     ]
 )
+
+fullAST1 = {
+    world = exampleWorldAST ;
+    subquests = [] ;
+    mainQuest = exampleQuestAST ;
+}
+
+fullAST2 = {
+    world = exampleWorldAST ;
+    subquests = [subquestAST] ;
+    mainQuest = exampleQuestAST2 ;
+}
