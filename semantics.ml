@@ -1,66 +1,35 @@
-(* Utils *)
-let rec mapRm m x = match m with
-    | [] -> []
-    | ((x', y) :: rest) -> if x = x' then mapRm rest x else ((x', y) :: (mapRm rest x))
-
-let mapAdd m x y = ((x, y) :: (mapRm m x))
-
-let rec mapUpdate m x f y = match m with
-    | [] -> [ (x, y) ]
-    | ((x', y) :: rest) -> if x = x' then ((x', f y) :: rest) else ((x', y) :: (mapUpdate rest x f y))
-
-let contains l x = exists (fun x' -> x' = x) l
-
-let rec mapLookup m x = match m with
-    | [] -> None
-    | ((x', y) :: rest) -> if x = x' then Some y else (mapLookup rest x)
-
-let rec mapExtract l x = match l with
-    | [] -> None
-    | ((x', y) :: rest) -> if x' = x then Some (y, rest) else (
-        match mapExtract rest x with
-        | None -> None
-        | Some (y', rest') -> Some (y', (x', y) :: rest')
-    )
-
-let rec extract l x = match l with
-    | [] -> None
-    | (x' :: rest) -> if x' = x then Some rest else (
-        match extract rest x with
-        | None -> None
-        | Some rest' -> Some (x' :: rest')
-    )
-
-
+open Abstract_syntax_tree;;
+open Utils;;
+open Either;;
 
 type paramRes =
-    | LocationRes of locatonId
+    | LocationRes of locationId
     | ItemRes of itemId
-    | CharRes of characterId
+    | CharRes of characterId;;
 
 type playerType = {
-    inventory : itemId list
-    location : locationId
-}
+    inventory : itemId list;
+    location : locationId;
+};;
 
-type locMap = (locationId * ((itemId list) * (characterId list) * bool)) list
+type locMap = (locationId * ((itemId list) * (characterId list))) list;;
 
 type worldState = {
-    charsAlive : characterId list
-    charsDead : characterId list
-    player : playerType
-    worldMap : locMap
-    subquests : subquestEntry list
-    memory : (var * paramRes) list
-}
+    charsAlive : characterId list;
+    charsDead : characterId list;
+    player : playerType;
+    worldMap : locMap;
+    subquests : subquestEntry list;
+    memory : (var * paramRes) list;
+};;
 
-let lookupPlayerLoc ws = mapLookup ws.worldMap ws.player.location
+let lookupPlayerLoc ws = mapLookup ws.worldMap ws.player.location;;
 let unsafeSetItemsAtPlayerLoc ws items = { ws with
     worldMap = mapUpdate ws.worldMap ws.player.location (fun (_, npcs) -> (items, npcs)) ([], [])
-}
+};;
 let unsafeSetNpcsAtPlayerLoc ws npcs = { ws with
     worldMap = mapUpdate ws.worldMap ws.player.location (fun (items, _) -> (items, npcs)) ([], [])
-}
+};;
 
 
 let emptyWorldState = {
@@ -73,7 +42,7 @@ let emptyWorldState = {
     worldMap = [];
     subquests = [];
     memory = [];
-}
+};;
 
 let rec populateWorldState worldData world = match worldData with
     | [] -> world
@@ -82,7 +51,7 @@ let rec populateWorldState worldData world = match worldData with
             | PlayerC -> { world with player = (match world.player.location with
                 | NullLocation -> { world.player with location = loc }
                 | _ -> raise (Failure "Error: Player's starting location was set twice")) }
-            | NPCLiteral npc -> { world with
+            | npc -> { world with
                 charsAlive = npc :: world.charsAlive ;
                 worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> (items, (npc :: npcs))) ([], [ npc ])
                 }
@@ -93,11 +62,11 @@ let rec populateWorldState worldData world = match worldData with
         | LocationWorldEntry loc -> { world with
             worldMap = mapUpdate world.worldMap loc (fun x -> x) ([], [])
         }
-    )
+    );;
 
 let buildWorldState ast =
     let populated = populateWorldState ast.world emptyWorldState in
-    { populated with subquests = ast.subquests }
+    { populated with subquests = ast.subquests };;
 
 let evalParamExp ws e = match e with
     | LocationExp loc -> LocationRes loc
@@ -108,17 +77,17 @@ let evalParamExp ws e = match e with
         | Some r -> r
         )
     | GetCharLoc c -> (match c with
-        | PlayerC -> ws.player.location
+        | PlayerC -> LocationRes ws.player.location
         | NPCLiteral npc -> raise (Failure "Not yet implemented")
         )
-    | GetItemLoc item -> raise (Failure "Not yet implemented")
+    | GetItemLoc item -> raise (Failure "Not yet implemented");;
 
 let rec questEval q ws stepNo = match q with
     | [] -> Right ws
-    | qstep :: qs -> let recurse = questEval sq in
+    | qstep :: qs -> let recurse = questEval qs in
                      let nextStep = stepNo + 1 in (
         match qstep with
-        | ActionExp (act, e) -> (match (act, evalParamExp e) with
+        | ActionExp (act, e) -> (match (act, evalParamExp ws e) with
             | (Require, (ItemRes itm)) ->
                 if contains ws.player.inventory itm
                     then recurse ws nextStep
@@ -135,11 +104,13 @@ let rec questEval q ws stepNo = match q with
                 )
             | (Kill, (CharRes c)) -> (match c with
                 | PlayerC -> Left (stepNo, "The player character cannot kill themselves")
-                | NPCLiteral npc -> (match lookupPlayerLoc ws with
+                | npc -> (match lookupPlayerLoc ws with
                     | None -> Left (stepNo, "Player is at an invalid location")
                     | Some (_, npcs) -> (match extract npcs npc with
                         | None -> Left (stepNo, "NPC does not exist at player's location")
-                        | Some npcs' -> recurse (unsafeSetNpcsAtPlayerLoc ws npcs') nextStep
+                        | Some npcs' -> recurse
+                            { (unsafeSetNpcsAtPlayerLoc ws npcs') with charsDead = npc :: ws.charsDead }
+                            nextStep
                         )
                     )
                 )
@@ -147,12 +118,15 @@ let rec questEval q ws stepNo = match q with
                 | None -> Left (stepNo, "Required item not held by player")
                 | Some newInv -> recurse { ws with player = { ws.player with inventory = newInv } } nextStep
                 )
+            | _ -> Left (stepNo, "Basic action got the wrong type of input")
             )
         | LetExp (v, e) -> raise (Failure "Not yet implemented")
         | RunSubquestExp (sq, args) -> raise (Failure "Not yet implemented")
-        | _ -> Left (stepNo, "Basic action got the wrong type of input")
-    )
+        | _ -> Left (stepNo, "A typing error has occured")
+    );;
 
-let astEval ast = match questEval ast.mainQuest (buildWorldState ast) 0 with
-    | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int stepNo) ^ ": " ^ err
-    | Right _ -> "Quest was validated successfully!"
+let evalAST ast = match questEval ast.mainQuest (buildWorldState ast) 0 with
+    | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int stepNo) ^ ": " ^ err ^ "\n"
+    | Right _ -> "Quest was validated successfully!\n";;
+
+let printEvalAST ast = print_string (evalAST ast);;
