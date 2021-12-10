@@ -1,5 +1,6 @@
 open Abstract_syntax_tree;;
 open Semantics;;
+
 (*
 World
     location Forest
@@ -42,14 +43,20 @@ let exampleQuestAST = [
     ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
 ];;
 
-let subquestAST = "RoundTrip",
+let exampleBadQuestAST = [
+    ActionExp (Goto, (LocationExp (LocationLiteral "Desert")));
+    ActionExp (Get, (ItemExp "Sword"));
+    ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
+];;
+
+let subquestAST = "RoundTrip", (
     ["loc"; "item"],
     [
-        LetExp ("initial", GetCharLoc PlayerC);
+        LetExp ("initial", GetLoc (CharExp PlayerC));
         ActionExp (Goto, (VarExp "loc"));
         ActionExp (Get, (VarExp "item"));
         ActionExp (Goto, (VarExp "initial"))
-    ];;
+    ]);;
 
 let exampleQuestAST2 =[
     RunSubquestExp ("RoundTrip", [LocationExp (LocationLiteral "Desert"); ItemExp "Sword"]);
@@ -62,6 +69,12 @@ let fullAST1 = {
     mainQuest = exampleQuestAST ;
 };;
 
+let fullBadAST1 = {
+    world = exampleWorldAST ;
+    subquests = [] ;
+    mainQuest = exampleBadQuestAST ;
+};;
+
 let fullAST2 = {
     world = exampleWorldAST ;
     subquests = [subquestAST] ;
@@ -69,6 +82,21 @@ let fullAST2 = {
 };;
 
 
+let count : unit -> int =
+  let next = ref 1 in
+  let next() =
+    let n = !next in
+    next := n + 1;
+    n
+  in
+  next;;
+
+
+let printTestOutput ast = print_string ("Test " ^ (string_of_int (count ())) ^ ": " ^ (evalAST ast));;
+
+
 (** Evaluate the ASTs **)
 
-printEvalAST fullAST1;;
+printTestOutput fullAST1;;
+printTestOutput fullAST2;;
+printTestOutput fullBadAST1;;

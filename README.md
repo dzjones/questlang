@@ -12,8 +12,8 @@ open Semantics;;
 5. To actually run the quests in your file, run `make my_file.q && ./my_file.q`
 6. The above command will compile the whole project and print to standard output a line describing what whent wrong or a success message if nothing went wrong.
 
-You can find an example of what this file should look like in `example.ml`
-To run the example, run `make example.q && ./example.q`
+You can find an example of what this file should look like in `tester.ml`
+To run and view the example, run `make tester.q && ./tester.q`
 
 To clean up the project directory run `make clean`
 

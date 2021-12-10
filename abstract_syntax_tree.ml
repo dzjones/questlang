@@ -18,8 +18,7 @@ type paramExp =
     | LocationExp of locationId
     | ItemExp of itemId
     | CharExp of characterId
-    | GetCharLoc of characterId
-    | GetItemLoc of itemId;;
+    | GetLoc of paramExp;;
 
 type worldEntry =
     | CharWorldEntry of characterId * locationId
@@ -31,14 +30,14 @@ type unaryAction =
     | Goto
     | Get
     | Kill
-    | Interact;;
+    | Use;;
 
 type questExp =
     | ActionExp of unaryAction * paramExp
     | LetExp of var * paramExp
     | RunSubquestExp of subquestId * (paramExp list);;
 
-type subquestEntry = subquestId * (var list) * (questExp list);;
+type subquestEntry = subquestId * ((var list) * (questExp list));;
 
 type _AST = {
     world : worldEntry list;
