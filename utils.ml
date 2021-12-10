@@ -4,7 +4,7 @@ let rec mapRm m x = match m with
     | [] -> []
     | ((x', y) :: rest) -> if x = x' then mapRm rest x else ((x', y) :: (mapRm rest x));;
 
-let mapAdd m x y = ((x, y) :: (mapRm m x));;
+let mapAdd (x, y) m = ((x, y) :: (mapRm m x));;
 
 let rec mapUpdate m x f y = match m with
     | [] -> [ (x, y) ]

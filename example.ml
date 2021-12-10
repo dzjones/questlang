@@ -42,14 +42,14 @@ let exampleQuestAST = [
     ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
 ];;
 
-let subquestAST = "RoundTrip",
+let subquestAST = "RoundTrip", (
     ["loc"; "item"],
     [
         LetExp ("initial", GetCharLoc PlayerC);
         ActionExp (Goto, (VarExp "loc"));
         ActionExp (Get, (VarExp "item"));
         ActionExp (Goto, (VarExp "initial"))
-    ];;
+    ]);;
 
 let exampleQuestAST2 =[
     RunSubquestExp ("RoundTrip", [LocationExp (LocationLiteral "Desert"); ItemExp "Sword"]);
@@ -72,3 +72,4 @@ let fullAST2 = {
 (** Evaluate the ASTs **)
 
 printEvalAST fullAST1;;
+printEvalAST fullAST2;;

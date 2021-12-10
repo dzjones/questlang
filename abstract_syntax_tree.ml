@@ -38,7 +38,7 @@ type questExp =
     | LetExp of var * paramExp
     | RunSubquestExp of subquestId * (paramExp list);;
 
-type subquestEntry = subquestId * (var list) * (questExp list);;
+type subquestEntry = subquestId * ((var list) * (questExp list));;
 
 type _AST = {
     world : worldEntry list;

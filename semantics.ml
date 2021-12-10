@@ -1,6 +1,7 @@
 open Abstract_syntax_tree;;
 open Utils;;
 open Either;;
+open List;;
 
 type paramRes =
     | LocationRes of locationId
@@ -24,12 +25,30 @@ type worldState = {
 };;
 
 let lookupPlayerLoc ws = mapLookup ws.worldMap ws.player.location;;
+
+let updateMemory ws f = { ws with memory = f ws.memory };;
+let updateInventory ws f = { ws with player = { ws.player with inventory = f ws.player.inventory } };;
+
 let unsafeSetItemsAtPlayerLoc ws items = { ws with
     worldMap = mapUpdate ws.worldMap ws.player.location (fun (_, npcs) -> (items, npcs)) ([], [])
 };;
+
 let unsafeSetNpcsAtPlayerLoc ws npcs = { ws with
     worldMap = mapUpdate ws.worldMap ws.player.location (fun (items, _) -> (items, npcs)) ([], [])
 };;
+
+let rec searchItem worldMap item = match worldMap with
+    | [] -> None
+    | (loc, (items, _)) :: rest -> if contains items item
+        then Some loc
+        else searchItem rest item;;
+
+let rec searchNpc worldMap npc = match worldMap with
+    | [] -> None
+    | (loc, (_, npcs)) :: rest -> if contains npcs npc
+        then Some loc
+        else searchNpc rest npc;;
+
 
 
 let emptyWorldState = {
@@ -78,28 +97,33 @@ let evalParamExp ws e = match e with
         )
     | GetCharLoc c -> (match c with
         | PlayerC -> LocationRes ws.player.location
-        | NPCLiteral npc -> raise (Failure "Not yet implemented")
+        | npc -> (match searchNpc ws.worldMap npc with
+            | None -> raise (Failure "NPC not found")
+            | Some loc -> LocationRes loc
+            )
         )
-    | GetItemLoc item -> raise (Failure "Not yet implemented");;
+    | GetItemLoc item -> (match searchItem ws.worldMap item with
+        | None -> raise (Failure "Item not found")
+        | Some loc -> LocationRes loc
+        );;
 
-let rec questEval q ws stepNo = match q with
-    | [] -> Right ws
-    | qstep :: qs -> let recurse = questEval qs in
-                     let nextStep = stepNo + 1 in (
+let rec questEval q stepNo ws = match q with
+    | [] -> Right (stepNo, ws)
+    | qstep :: qs -> let recurse = questEval qs (stepNo + 1) in (
         match qstep with
         | ActionExp (act, e) -> (match (act, evalParamExp ws e) with
             | (Require, (ItemRes itm)) ->
                 if contains ws.player.inventory itm
-                    then recurse ws nextStep
+                    then recurse ws
                     else Left (stepNo, "Required item not held by player")
-            | (Goto, (LocationRes loc)) -> recurse { ws with player = { ws.player with location = loc } } nextStep
+            | (Goto, (LocationRes loc)) -> recurse { ws with player = { ws.player with location = loc } }
             | (Get, (ItemRes itm)) -> (match lookupPlayerLoc ws with
                 | None -> Left (stepNo, "Player is at an invalid location")
                 | Some (items, _) -> (match extract items itm with
                     | None -> Left (stepNo, "Item does not exist at player's location")
                     | Some items' -> recurse { (unsafeSetItemsAtPlayerLoc ws items') with
                         player = { ws.player with inventory = itm :: ws.player.inventory };
-                        } nextStep
+                        }
                     )
                 )
             | (Kill, (CharRes c)) -> (match c with
@@ -110,22 +134,32 @@ let rec questEval q ws stepNo = match q with
                         | None -> Left (stepNo, "NPC does not exist at player's location")
                         | Some npcs' -> recurse
                             { (unsafeSetNpcsAtPlayerLoc ws npcs') with charsDead = npc :: ws.charsDead }
-                            nextStep
                         )
                     )
                 )
             | (Interact, (ItemRes itm)) -> (match extract ws.player.inventory itm with
                 | None -> Left (stepNo, "Required item not held by player")
-                | Some newInv -> recurse { ws with player = { ws.player with inventory = newInv } } nextStep
+                | Some newInv -> recurse (updateInventory ws (fun _ -> newInv))
                 )
             | _ -> Left (stepNo, "Basic action got the wrong type of input")
             )
-        | LetExp (v, e) -> raise (Failure "Not yet implemented")
-        | RunSubquestExp (sq, args) -> raise (Failure "Not yet implemented")
+        | LetExp (v, e) -> recurse (updateMemory ws (mapAdd (v, (evalParamExp ws e))))
+        | RunSubquestExp (sqname, args) -> (match mapLookup ws.subquests sqname with
+            | None -> Left (stepNo, "Subquest not found")
+            | Some (formalArgs, subq) ->
+                let oldMemory = ws.memory in
+                let newWS = (fold_left
+                    (fun ws' (v, e) -> updateMemory ws' (mapAdd (v, (evalParamExp ws e))))
+                    ws
+                    (combine formalArgs args)) in
+                (match questEval subq (stepNo + 1) newWS with
+                    | Left (stepNo', err) -> Left (stepNo', err)
+                    | Right (stepNo', newWS') -> questEval qs stepNo' { newWS' with memory = oldMemory })
+            )
         | _ -> Left (stepNo, "A typing error has occured")
     );;
 
-let evalAST ast = match questEval ast.mainQuest (buildWorldState ast) 0 with
+let evalAST ast = match questEval ast.mainQuest 0 (buildWorldState ast) with
     | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int stepNo) ^ ": " ^ err ^ "\n"
     | Right _ -> "Quest was validated successfully!\n";;
 
