@@ -1,5 +1,6 @@
 open Abstract_syntax_tree;;
 open Semantics;;
+
 (*
 World
     location Forest
@@ -81,8 +82,21 @@ let fullAST2 = {
 };;
 
 
+let count : unit -> int =
+  let next = ref 1 in
+  let next() =
+    let n = !next in
+    next := n + 1;
+    n
+  in
+  next;;
+
+
+let printTestOutput ast = print_string ("Test " ^ (string_of_int (count ())) ^ ": " ^ (evalAST ast));;
+
+
 (** Evaluate the ASTs **)
 
-printEvalAST fullAST1;;
-printEvalAST fullAST2;;
-printEvalAST fullBadAST1;;
+printTestOutput fullAST1;;
+printTestOutput fullAST2;;
+printTestOutput fullBadAST1;;
