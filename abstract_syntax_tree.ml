@@ -30,7 +30,7 @@ type unaryAction =
     | Goto
     | Get
     | Kill
-    | Interact;;
+    | Use;;
 
 type questExp =
     | ActionExp of unaryAction * paramExp

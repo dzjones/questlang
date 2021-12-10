@@ -140,7 +140,7 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
                         )
                     )
                 )
-            | (Interact, (ItemRes itm)) -> (match extract ws.player.inventory itm with
+            | (Use, (ItemRes itm)) -> (match extract ws.player.inventory itm with
                 | None -> Left (stepNo, "Required item not held by player")
                 | Some newInv -> recurse (updateInventory ws (fun _ -> newInv))
                 )
