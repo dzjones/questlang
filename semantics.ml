@@ -107,7 +107,7 @@ let evalParamExp ws e = match e with
         | Some loc -> LocationRes loc
         );;
 
-let rec questEval q stepNo ws = match q with
+let [@warning "-11"] rec questEval q stepNo ws = match q with
     | [] -> Right (stepNo, ws)
     | qstep :: qs -> let recurse = questEval qs (stepNo + 1) in (
         match qstep with
