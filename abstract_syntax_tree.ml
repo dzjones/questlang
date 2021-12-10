@@ -18,8 +18,7 @@ type paramExp =
     | LocationExp of locationId
     | ItemExp of itemId
     | CharExp of characterId
-    | GetCharLoc of characterId
-    | GetItemLoc of itemId;;
+    | GetLoc of paramExp;;
 
 type worldEntry =
     | CharWorldEntry of characterId * locationId

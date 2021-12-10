@@ -45,7 +45,7 @@ let exampleQuestAST = [
 let subquestAST = "RoundTrip", (
     ["loc"; "item"],
     [
-        LetExp ("initial", GetCharLoc PlayerC);
+        LetExp ("initial", GetLoc (CharExp PlayerC));
         ActionExp (Goto, (VarExp "loc"));
         ActionExp (Get, (VarExp "item"));
         ActionExp (Goto, (VarExp "initial"))

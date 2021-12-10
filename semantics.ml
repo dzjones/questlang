@@ -87,7 +87,7 @@ let buildWorldState ast =
     let populated = populateWorldState ast.world emptyWorldState in
     { populated with subquests = ast.subquests };;
 
-let evalParamExp ws e = match e with
+let rec evalParamExp ws e = match e with
     | LocationExp loc -> LocationRes loc
     | ItemExp item -> ItemRes item
     | CharExp c -> CharRes c
@@ -95,16 +95,19 @@ let evalParamExp ws e = match e with
         | None -> raise (Failure "Error: variable lookup failed")
         | Some r -> r
         )
-    | GetCharLoc c -> (match c with
-        | PlayerC -> LocationRes ws.player.location
-        | npc -> (match searchNpc ws.worldMap npc with
-            | None -> raise (Failure "NPC not found")
+    | GetLoc e' -> (match evalParamExp ws e' with
+        | LocationRes loc -> LocationRes loc
+        | CharRes c -> (match c with
+            | PlayerC -> LocationRes ws.player.location
+            | npc -> (match searchNpc ws.worldMap npc with
+                | None -> raise (Failure "NPC not found")
+                | Some loc -> LocationRes loc
+                )
+            )
+        | ItemRes item -> (match searchItem ws.worldMap item with
+            | None -> raise (Failure "Item not found")
             | Some loc -> LocationRes loc
             )
-        )
-    | GetItemLoc item -> (match searchItem ws.worldMap item with
-        | None -> raise (Failure "Item not found")
-        | Some loc -> LocationRes loc
         );;
 
 let [@warning "-11"] rec questEval q stepNo ws = match q with
