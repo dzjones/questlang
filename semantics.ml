@@ -163,7 +163,7 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
     );;
 
 let evalAST ast = match questEval ast.mainQuest 0 (buildWorldState ast) with
-    | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int stepNo) ^ ": " ^ err ^ "\n"
+    | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int (stepNo + 1)) ^ ": " ^ err ^ "\n"
     | Right _ -> "Quest was validated successfully!\n";;
 
 let printEvalAST ast = print_string (evalAST ast);;

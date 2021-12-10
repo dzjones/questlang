@@ -42,6 +42,12 @@ let exampleQuestAST = [
     ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
 ];;
 
+let exampleBadQuestAST = [
+    ActionExp (Goto, (LocationExp (LocationLiteral "Desert")));
+    ActionExp (Get, (ItemExp "Sword"));
+    ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
+];;
+
 let subquestAST = "RoundTrip", (
     ["loc"; "item"],
     [
@@ -62,6 +68,12 @@ let fullAST1 = {
     mainQuest = exampleQuestAST ;
 };;
 
+let fullBadAST1 = {
+    world = exampleWorldAST ;
+    subquests = [] ;
+    mainQuest = exampleBadQuestAST ;
+};;
+
 let fullAST2 = {
     world = exampleWorldAST ;
     subquests = [subquestAST] ;
@@ -73,3 +85,4 @@ let fullAST2 = {
 
 printEvalAST fullAST1;;
 printEvalAST fullAST2;;
+printEvalAST fullBadAST1;;
