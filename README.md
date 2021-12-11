@@ -1,3 +1,10 @@
+UPDATE:
+
+1. Run `make`
+2. `./questlang quest-example.ql`
+
+Cool!
+
 TODO: Explain what the tool actually does
 
 To use this tool:

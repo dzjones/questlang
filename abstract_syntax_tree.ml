@@ -44,3 +44,33 @@ type _AST = {
     subquests : subquestEntry list;
     mainQuest : questExp list;
 };;
+
+type _ParserAST =
+    | ParserWorldEntry of worldEntry list
+    | ParserQuestExp of questExp list
+    | ParserSubquestExp of subquestEntry
+
+(*
+type token =
+    | TknWorld
+    | TknQuest
+    | TknSubquest of string
+    | TknFormalParam of string
+    | TknSubquestRun of string
+    | TknArgument of string
+    | TknLocation
+    | TknNPC
+    | TknItem
+    | TknAt
+    | TknVar of string
+    | TknLiteral of string
+    | TknRequire
+    | TknGoto
+    | TknGet
+    | TknKill
+    | TknUse
+    | TknLet of string
+    | TknEq
+    | TknGetLoc
+    | EOF
+    *)

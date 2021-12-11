@@ -17,6 +17,9 @@ Quest
 
 hypotheticals:
 
+(a)
+(a, b)
+
 Subquest RoundTrip (location, item)
     let firstLoc = getloc Player
     goto location
@@ -24,7 +27,7 @@ Subquest RoundTrip (location, item)
     goto firstLoc
 
 Quest
-    RoundTrip (Desert, Sword)
+    run RoundTrip (Desert, Sword)
     kill Wolf
 *)
 
