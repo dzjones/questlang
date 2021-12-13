@@ -22,7 +22,8 @@ type worldState = {
     worldMap : locMap;
     subquests : subquestEntry list;
     memory : (var * paramRes) list;
-    vulnerability : (characterId * (itemId list)) list
+    vulnerability : (characterId * (itemId list)) list;
+    allItems : itemId list;
 };;
 
 let lookupPlayerLoc ws = mapLookup ws.worldMap ws.player.location;;
@@ -63,6 +64,7 @@ let emptyWorldState = {
     subquests = [];
     memory = [];
     vulnerability = [];
+    allItems = [];
 };;
 
 let rec populateWorldState worldData world = match worldData with
@@ -78,8 +80,11 @@ let rec populateWorldState worldData world = match worldData with
                     worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> (items, (npc :: npcs))) ([], [ npc ])
                 }
             )
-        | ItemWorldEntry (itm, loc) -> recurse { world with
-            worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> ((itm :: items), npcs)) ([ itm ], [])
+        | ItemWorldEntry (itm, loc) -> if mem itm world.allItems
+            then Left "Error: item's location was set twice"
+            else recurse { world with
+                worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> ((itm :: items), npcs)) ([ itm ], []);
+                allItems = itm :: world.allItems
             }
         | LocationWorldEntry loc -> recurse { world with
             worldMap = mapUpdate world.worldMap loc (fun x -> x) ([], [])
