@@ -7,7 +7,7 @@ questlang: $(LIB_RAW)
 	ocamllex lexer.mll
 	ocamlopt -o questlang $(LIB) main.ml
 
-test-semantics : semantics-tester.ml questlang $(LIB)
+test-semantics : semantics_tester.ml questlang $(LIB)
 	ocamlopt -o $<.o $(LIB) $<
 	./$<.o; rm -f $<.o
 
