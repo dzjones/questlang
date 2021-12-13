@@ -23,7 +23,8 @@ type paramExp =
 type worldEntry =
     | CharWorldEntry of characterId * locationId
     | ItemWorldEntry of itemId * locationId
-    | LocationWorldEntry of locationId;;
+    | LocationWorldEntry of locationId
+    | VulnerabilityWorldEntry of characterId * (itemId list);;
 
 type unaryAction =
     | Require

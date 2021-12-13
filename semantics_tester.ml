@@ -36,7 +36,8 @@ let exampleWorldAST = [
     LocationWorldEntry (LocationLiteral "Desert");
     CharWorldEntry (PlayerC, LocationLiteral "Forest");
     CharWorldEntry (NPCLiteral "Wolf", LocationLiteral "Forest");
-    ItemWorldEntry ("Sword", LocationLiteral "Desert")
+    ItemWorldEntry ("Sword", LocationLiteral "Desert");
+    VulnerabilityWorldEntry (NPCLiteral "Wolf", ["Sword"])
 ];;
 
 let exampleQuestAST = [

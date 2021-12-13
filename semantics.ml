@@ -22,6 +22,7 @@ type worldState = {
     worldMap : locMap;
     subquests : subquestEntry list;
     memory : (var * paramRes) list;
+    vulnerability : (characterId * (itemId list)) list
 };;
 
 let lookupPlayerLoc ws = mapLookup ws.worldMap ws.player.location;;
@@ -61,6 +62,7 @@ let emptyWorldState = {
     worldMap = [];
     subquests = [];
     memory = [];
+    vulnerability = [];
 };;
 
 let rec populateWorldState worldData world = match worldData with
@@ -80,7 +82,10 @@ let rec populateWorldState worldData world = match worldData with
             }
         | LocationWorldEntry loc -> { world with
             worldMap = mapUpdate world.worldMap loc (fun x -> x) ([], [])
-        }
+            }
+        | VulnerabilityWorldEntry (char, vItems) -> { world with
+            vulnerability = mapAdd (char, vItems) world.vulnerability
+            }
     );;
 
 let buildWorldState ast =
@@ -135,8 +140,13 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
                     | None -> Left (stepNo, "Player is at an invalid location")
                     | Some (_, npcs) -> (match extract npcs npc with
                         | None -> Left (stepNo, "NPC does not exist at player's location")
-                        | Some npcs' -> recurse
-                            { (unsafeSetNpcsAtPlayerLoc ws npcs') with charsDead = npc :: ws.charsDead }
+                        | Some npcs' -> (match mapLookup ws.vulnerability npc with
+                            | None -> Left (stepNo, "NPC is invincible")
+                            | Some vItems -> if exists (fun x -> mem x ws.player.inventory) vItems
+                                then recurse
+                                    { (unsafeSetNpcsAtPlayerLoc ws npcs') with charsDead = npc :: ws.charsDead }
+                                else Left (stepNo, "Player cannot kill the NPC")
+                            )
                         )
                     )
                 )
