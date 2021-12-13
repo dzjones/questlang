@@ -66,52 +66,55 @@ let emptyWorldState = {
 };;
 
 let rec populateWorldState worldData world = match worldData with
-    | [] -> world
-    | worldE :: worldData' -> populateWorldState worldData' ( match worldE with
+    | [] -> Right world
+    | worldE :: worldData' -> let recurse = populateWorldState worldData' in ( match worldE with
         | CharWorldEntry (chr, loc) -> (match chr with
-            | PlayerC -> { world with player = (match world.player.location with
-                | NullLocation -> { world.player with location = loc }
-                | _ -> raise (Failure "Error: Player's starting location was set twice")) }
-            | npc -> { world with
-                charsAlive = npc :: world.charsAlive ;
-                worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> (items, (npc :: npcs))) ([], [ npc ])
+            | PlayerC -> (match world.player.location with
+                | NullLocation -> recurse { world with player = { world.player with location = loc }}
+                | _ -> Left "Error: Player's starting location was set twice")
+            | npc -> if mem npc world.charsAlive then Left "Error: NPC's location was set twice" else
+                recurse { world with
+                    charsAlive = npc :: world.charsAlive ;
+                    worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> (items, (npc :: npcs))) ([], [ npc ])
                 }
             )
-        | ItemWorldEntry (itm, loc) -> { world with
+        | ItemWorldEntry (itm, loc) -> recurse { world with
             worldMap = mapUpdate world.worldMap loc (fun (items, npcs) -> ((itm :: items), npcs)) ([ itm ], [])
             }
-        | LocationWorldEntry loc -> { world with
+        | LocationWorldEntry loc -> recurse { world with
             worldMap = mapUpdate world.worldMap loc (fun x -> x) ([], [])
             }
-        | VulnerabilityWorldEntry (char, vItems) -> { world with
+        | VulnerabilityWorldEntry (char, vItems) -> recurse { world with
             vulnerability = mapAdd (char, vItems) world.vulnerability
             }
     );;
 
 let buildWorldState ast =
-    let populated = populateWorldState ast.world emptyWorldState in
-    { populated with subquests = ast.subquests };;
+    match populateWorldState ast.world emptyWorldState with
+        | Left err -> Left err
+        | Right populated -> Right { populated with subquests = ast.subquests };;
 
 let rec evalParamExp ws e = match e with
-    | LocationExp loc -> LocationRes loc
-    | ItemExp item -> ItemRes item
-    | CharExp c -> CharRes c
+    | LocationExp loc -> Right (LocationRes loc)
+    | ItemExp item -> Right (ItemRes item)
+    | CharExp c -> Right (CharRes c)
     | VarExp v -> (match mapLookup ws.memory v with
-        | None -> raise (Failure "Error: variable lookup failed")
-        | Some r -> r
+        | None -> Left "Error: variable lookup failed"
+        | Some r -> Right r
         )
     | GetLoc e' -> (match evalParamExp ws e' with
-        | LocationRes loc -> LocationRes loc
-        | CharRes c -> (match c with
-            | PlayerC -> LocationRes ws.player.location
+        | Left err -> Left err
+        | Right (LocationRes loc) -> Right (LocationRes loc)
+        | Right (CharRes c) -> (match c with
+            | PlayerC -> Right (LocationRes ws.player.location)
             | npc -> (match searchNpc ws.worldMap npc with
-                | None -> raise (Failure "NPC not found")
-                | Some loc -> LocationRes loc
+                | None -> Left "NPC not found"
+                | Some loc -> Right (LocationRes loc)
                 )
             )
-        | ItemRes item -> (match searchItem ws.worldMap item with
-            | None -> raise (Failure "Item not found")
-            | Some loc -> LocationRes loc
+        | Right (ItemRes item) -> (match searchItem ws.worldMap item with
+            | None -> Left "Item not found"
+            | Some loc -> Right (LocationRes loc)
             )
         );;
 
@@ -119,7 +122,9 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
     | [] -> Right (stepNo, ws)
     | qstep :: qs -> let recurse = questEval qs (stepNo + 1) in (
         match qstep with
-        | ActionExp (act, e) -> (match (act, evalParamExp ws e) with
+        | ActionExp (act, e) -> (match evalParamExp ws e with
+            | Left err -> Left (stepNo, err)
+            | Right param -> (match (act, param) with
             | (Require, (ItemRes itm)) ->
                 if contains ws.player.inventory itm
                     then recurse ws
@@ -144,7 +149,10 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
                             | None -> Left (stepNo, "NPC is invincible")
                             | Some vItems -> if exists (fun x -> mem x ws.player.inventory) vItems
                                 then recurse
-                                    { (unsafeSetNpcsAtPlayerLoc ws npcs') with charsDead = npc :: ws.charsDead }
+                                    { (unsafeSetNpcsAtPlayerLoc ws npcs') with
+                                    charsDead = npc :: ws.charsDead;
+                                    charsAlive = filter (fun x -> x <> npc) ws.charsAlive
+                                    }
                                 else Left (stepNo, "Player cannot kill the NPC")
                             )
                         )
@@ -155,27 +163,38 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
                 | Some newInv -> recurse (updateInventory ws (fun _ -> newInv))
                 )
             | _ -> Left (stepNo, "Basic action got the wrong type of input")
-            )
-        | LetExp (v, e) -> recurse (updateMemory ws (mapAdd (v, (evalParamExp ws e))))
+            ))
+        | LetExp (v, e) -> (match evalParamExp ws e with
+            | Left err -> Left (stepNo, err)
+            | Right param -> recurse (updateMemory ws (mapAdd (v, param))))
         | RunSubquestExp (sqname, args) -> (match mapLookup ws.subquests sqname with
             | None -> Left (stepNo, "Subquest not found")
             | Some (formalArgs, subq) ->
                 let oldMemory = ws.memory in
-                let newWS = (fold_left
-                    (fun ws' (v, e) -> updateMemory ws' (mapAdd (v, (evalParamExp ws e))))
-                    ws
+                let newWSE = (fold_left
+                    (fun ws'' (v, e) -> match ws'' with
+                        | Left err -> Left err
+                        | Right ws' -> (match evalParamExp ws e with
+                            | Left err -> Left err
+                            | Right param -> Right (updateMemory ws' (mapAdd (v, param)))))
+                    (Right ws)
                     (combine formalArgs args)) in
-                (match questEval subq (stepNo + 1) newWS with
-                    | Left (stepNo', err) -> Left (stepNo', err)
-                    | Right (stepNo', newWS') -> questEval qs stepNo' { newWS' with memory = oldMemory })
+                (match newWSE with
+                    | Left err -> Left (stepNo, err)
+                    | Right newWS -> (match questEval subq (stepNo + 1) newWS with
+                        | Left (stepNo', err) -> Left (stepNo', err)
+                        | Right (stepNo', newWS') -> questEval qs stepNo' { newWS' with memory = oldMemory }))
             )
         | _ -> Left (stepNo, "A typing error has occured")
     );;
 
 let evalAST ast = String.concat "" (List.map
-    (fun mq -> match questEval mq 0 (buildWorldState ast) with
-        | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int (stepNo + 1)) ^ ": " ^ err ^ "\n"
-        | Right _ -> "Quest was validated successfully!\n"
+    (fun mq -> match buildWorldState ast with
+        | Left err -> "Error when validating world declaration: " ^ err ^ "\n"
+        | Right ws -> (match questEval mq 0 ws with
+            | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int (stepNo + 1)) ^ ": " ^ err ^ "\n"
+            | Right _ -> "Quest was validated successfully!\n"
+        )
     ) ast.mainQuests);;
 
 let printEvalAST ast = print_string (evalAST ast);;
