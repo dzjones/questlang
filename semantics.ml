@@ -89,9 +89,11 @@ let rec populateWorldState worldData world = match worldData with
         | LocationWorldEntry loc -> recurse { world with
             worldMap = mapUpdate world.worldMap loc (fun x -> x) ([], [])
             }
-        | VulnerabilityWorldEntry (char, vItems) -> recurse { world with
-            vulnerability = mapAdd (char, vItems) world.vulnerability
-            }
+        | VulnerabilityWorldEntry (chr, vItems) -> (match mapLookup world.vulnerability chr with
+            | None -> recurse { world with
+                vulnerability = (chr, vItems) :: world.vulnerability
+                }
+            | Some _ -> Left "Error: NPC's vulnerability was set twice")
     );;
 
 let buildWorldState ast =
