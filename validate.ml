@@ -5,37 +5,35 @@ open Lexer
 open Utils
 open Semantics
 
-let findWorld = List.find_opt (fun x -> match x with Abstract_syntax_tree.ParserWorldEntry _ -> true | _ -> false)
-let findMainQuest = List.find_opt (fun x -> match x with Abstract_syntax_tree.ParserQuestExp _ -> true | _ -> false)
+let findWorld = List.fold_left
+  (fun w x -> match x with
+    | Abstract_syntax_tree.ParserWorldEntry w' -> w @ w'
+    | _ -> w
+  ) []
 
-let rec findSubquests parserResult accumulator =
-  match parserResult with
-  | [] -> accumulator
-  | x::xs -> (
-    match x with
-      | Abstract_syntax_tree.ParserSubquestExp y -> findSubquests xs (y::accumulator)
-      | _ -> findSubquests xs accumulator
-  )
+let findMainQuests = List.fold_left
+  (fun qs x -> match x with
+    | Abstract_syntax_tree.ParserQuestExp q -> q :: qs
+    | _ -> qs
+  ) []
+
+let findSubquests = List.fold_left
+  (fun qs x -> match x with
+    | Abstract_syntax_tree.ParserSubquestExp q -> q :: qs
+    | _ -> qs
+  ) []
 
 let buildFullAST parserResult =
-  let firstWorld = findWorld parserResult
-  and subquests = findSubquests parserResult []
-  and mainQuest = findMainQuest parserResult in
-  match firstWorld, mainQuest with
-  | (None, _) -> None | (_, None) -> None
-  | (Some Abstract_syntax_tree.ParserWorldEntry fw, Some Abstract_syntax_tree.ParserQuestExp mq) -> (
-    Some {
-      Abstract_syntax_tree.world = fw;
-      Abstract_syntax_tree.subquests = subquests;
-      Abstract_syntax_tree.mainQuest = mq;
-    }
-  );;
+  let completeWorld = findWorld parserResult in
+  let subquests = findSubquests parserResult in
+  let mainQuests = findMainQuests parserResult in {
+    Abstract_syntax_tree.world = completeWorld;
+    Abstract_syntax_tree.subquests = subquests;
+    Abstract_syntax_tree.mainQuests = mainQuests;
+  };;
 
 let validateQuestFile (qfile: string) =
   let channel = open_in qfile in
   let lexbuf = Lexing.from_channel channel in
-  let ast = buildFullAST (Parser.main Lexer.token lexbuf) in (
-    match ast with
-    | Some actualAST -> evalAST actualAST
-    | None -> "Parsing AST failed"
-  );;
+  let ast = buildFullAST (Parser.main Lexer.token lexbuf) in
+  evalAST ast;;

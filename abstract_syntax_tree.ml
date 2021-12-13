@@ -42,7 +42,7 @@ type subquestEntry = subquestId * ((var list) * (questExp list));;
 type _AST = {
     world : worldEntry list;
     subquests : subquestEntry list;
-    mainQuest : questExp list;
+    mainQuests : (questExp list) list;
 };;
 
 type _ParserAST =

@@ -69,19 +69,19 @@ let exampleQuestAST2 =[
 let fullAST1 = {
     world = exampleWorldAST ;
     subquests = [] ;
-    mainQuest = exampleQuestAST ;
+    mainQuests = [exampleQuestAST] ;
 };;
 
 let fullBadAST1 = {
     world = exampleWorldAST ;
     subquests = [] ;
-    mainQuest = exampleBadQuestAST ;
+    mainQuests = [exampleBadQuestAST] ;
 };;
 
 let fullAST2 = {
     world = exampleWorldAST ;
     subquests = [subquestAST] ;
-    mainQuest = exampleQuestAST2 ;
+    mainQuests = [exampleQuestAST2] ;
 };;
 
 

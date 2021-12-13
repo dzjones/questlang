@@ -162,8 +162,10 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
         | _ -> Left (stepNo, "A typing error has occured")
     );;
 
-let evalAST ast = match questEval ast.mainQuest 0 (buildWorldState ast) with
-    | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int (stepNo + 1)) ^ ": " ^ err ^ "\n"
-    | Right _ -> "Quest was validated successfully!\n";;
+let evalAST ast = String.concat "" (List.map
+    (fun mq -> match questEval mq 0 (buildWorldState ast) with
+        | Left (stepNo, err) -> "Quest invalidation occured at instruction " ^ (string_of_int (stepNo + 1)) ^ ": " ^ err ^ "\n"
+        | Right _ -> "Quest was validated successfully!\n"
+    ) ast.mainQuests);;
 
 let printEvalAST ast = print_string (evalAST ast);;
