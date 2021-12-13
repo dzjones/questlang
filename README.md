@@ -1,27 +1,32 @@
-UPDATE:
+# Questlang
 
-1. Run `make`
-2. `./questlang quest-example.ql`
+Questlang is a simple language for specifying and verifying Quest descriptions. It was based off of http://ianparberry.com/pubs/pcg2011.pdf and a desire to do something a little different for a Programming Languages and Compilers course project.
+The tool will take as input a file written in Questlang that specifies possible locations in your world, possible items that the player cahracter can collect at each location and NPCs that the player character can interact with at each location.
+It will also specify a quest that is to be validated in order to confirm if it can be completed in the world described previously.
+The quest is composed of basic actions such as `kill` and `goto`, and for instance, the quest will be shown invalid if the player character tries to `kill` a monster that's not at his location.
+For a description of all basic actions see the `Actions` section below.
 
-Cool!
+## Dependencies
 
-TODO: Explain what the tool actually does
+`ocamlyacc`, `ocamllex`, `ocamlopt`
+
+## Usage
 
 To use this tool:
-1. Create a new OCaml (`.ml`) file in this directory (e.g. `my_file.ml`)
-2. At the beginning of the file add the 2 lines:
-```
-open Abstract_syntax_tree;;
-open Semantics;;
-```
-3. Build an AST in OCaml (an object of type `_AST`) in your file (e.g. `let ast1 : _AST = ...`)
-4. To run the quests associated to those ASTs, call `printEvalAST` on each of them (e.g. `printEvalAST ast1;;`)
-5. To actually run the quests in your file, run `make my_file.q && ./my_file.q`
-6. The above command will compile the whole project and print to standard output a line describing what whent wrong or a success message if nothing went wrong.
+1. Run `make`
+2. (optional) Run `make test` to run the unit and integration tests
+3. Run `./questlang my-quest.ql` to validate a quest written in questlang, stored in `my-quest.ql`
 
-You can find an example of what this file should look like in `tester.ml`
-To run and view the example, run `make tester.q && ./tester.q`
+See `quest-example.ql` for a sample questlang file.
 
 To clean up the project directory run `make clean`
+
+## Actions
+* `goto` - Changes the player's current location
+* `get` - Tries to collect an item and add it to the player's inventory if it is at the player's location
+* `kill` - Kills a monster if it is at the player's location
+* `use` - Uses up one of the player's held items
+* `require` - Checks if the player holds a certain item
+
 
 Please report and issues with this tool on it's GitHub page: https://github.com/dzjones/questlang/issues

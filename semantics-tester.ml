@@ -85,21 +85,21 @@ let fullAST2 = {
 };;
 
 
-let count : unit -> int =
-  let next = ref 1 in
-  let next() =
-    let n = !next in
-    next := n + 1;
-    n
-  in
-  next;;
+let testAST expectedOutput ast testName =
+    let actualOutput = evalAST ast in
+    if actualOutput = expectedOutput
+        then print_string ("\027[32mTest case \"" ^ testName ^"\" passed successfully!\n\027[0m")
+        else print_string ("\027[31mTest case \"" ^ testName ^"\" failed! This is the actual output:\n    " ^ actualOutput ^ "vs the expected output:\n    " ^ expectedOutput ^ "\027[0m");;
 
-
-let printTestOutput ast = print_string ("Test " ^ (string_of_int (count ())) ^ ": " ^ (evalAST ast));;
-
+let testASTExpectSuccess = testAST "Quest was validated successfully!\n";;
 
 (** Evaluate the ASTs **)
 
-printTestOutput fullAST1;;
-printTestOutput fullAST2;;
-printTestOutput fullBadAST1;;
+let _ = print_string "\n\nUnit testing the semantics...\n\n";;
+
+let _ = testASTExpectSuccess fullAST1 "Simple quest";;
+let _ = testASTExpectSuccess fullAST2 "Simple quest using subquest";;
+let _ = testAST
+    "Quest invalidation occured at instruction 3: NPC does not exist at player's location\n"
+    fullBadAST1
+    "Simple invalid quest";;

@@ -1,4 +1,8 @@
 *.cmi
 *.cmx
 *.o
-*.txt
+*.out
+questlang
+lexer.ml
+parser.ml
+parser.mli

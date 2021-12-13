@@ -31,33 +31,11 @@ let buildFullAST parserResult =
     }
   );;
 
-let count : unit -> int =
-  let next = ref 1 in
-  let next() =
-    let n = !next in
-    next := n + 1;
-    n
-  in
-  next;;
-
-let testOutput ast = "Test " ^ (string_of_int (count ())) ^ ": " ^ (evalAST ast);;
-
 let validateQuestFile (qfile: string) =
   let channel = open_in qfile in
   let lexbuf = Lexing.from_channel channel in
   let ast = buildFullAST (Parser.main Lexer.token lexbuf) in (
     match ast with
-    | Some actualAST -> testOutput actualAST
+    | Some actualAST -> evalAST actualAST
     | None -> "Parsing AST failed"
   );;
-
-let usage_msg = "questlang <file.ql>";;
-let input_file = ref "";;
-let anon_fn filename =
-  input_file := filename
-
-let () =
-  Arg.parse [] anon_fn usage_msg;;
-
-  print_string "Validating...\n";;
-  print_string (validateQuestFile !input_file)
