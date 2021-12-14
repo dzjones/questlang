@@ -86,6 +86,8 @@ let fullAST2 = {
 };;
 
 
+(* This function tests a given AST by "running" it and checking the output against an expected output*)
+(* The test name is provided in order to give information to the users about which test passed or failed *)
 let testAST expectedOutput ast testName =
     let actualOutput = evalAST ast in
     if actualOutput = expectedOutput

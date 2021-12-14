@@ -6,6 +6,10 @@ open Utils
 open Semantics
 open Validate
 
+(* This is the main entry point of our program.
+   All it does is parse the command line arguments and pass them
+   to the relevant functions in our library *)
+
 let usage_msg = "questlang <file.ql>";;
 let input_file = ref "";;
 let anon_fn filename =

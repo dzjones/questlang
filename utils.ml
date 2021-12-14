@@ -1,5 +1,7 @@
 open List;;
 
+(* This module only contains some utility functions *)
+
 let rec mapRm m x = match m with
     | [] -> []
     | ((x', y) :: rest) -> if x = x' then mapRm rest x else ((x', y) :: (mapRm rest x));;

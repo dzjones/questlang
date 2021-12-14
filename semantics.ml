@@ -10,13 +10,27 @@ type paramRes =
     | CharRes of characterId
     | CondRes of bool;;
 
+(* The type of data related to the player character *)
 type playerType = {
     inventory : itemId list;
     location : locationId;
 };;
 
+(* The type used to represent the runtime state of the world:
+Each location is mapped to a list of items and characters residing at that location *)
 type locMap = (locationId * ((itemId list) * (characterId list))) list;;
 
+(* The main type representing the current state of the world/program:
+
+    charsAlive : characters still alive
+    charsDead : characters killed
+    player : see above
+    worldMap : see above
+    subquests : list of subquests (constant)
+    memory : mapping of variables to values
+    vulnerability : what each npc can be killed with
+    allItems : list of all items in the world (constant)
+*)
 type worldState = {
     charsAlive : characterId list;
     charsDead : characterId list;
@@ -41,12 +55,14 @@ let unsafeSetNpcsAtPlayerLoc ws npcs = { ws with
     worldMap = mapUpdate ws.worldMap ws.player.location (fun (items, _) -> (items, npcs)) ([], [])
 };;
 
+(* Search for a specific item in the world state *)
 let rec searchItem worldMap item = match worldMap with
     | [] -> None
     | (loc, (items, _)) :: rest -> if mem item items
         then Some loc
         else searchItem rest item;;
 
+(* Search for a specific npc in the world state *)
 let rec searchNpc worldMap npc = match worldMap with
     | [] -> None
     | (loc, (_, npcs)) :: rest -> if mem npc npcs
@@ -55,6 +71,7 @@ let rec searchNpc worldMap npc = match worldMap with
 
 
 
+(* The initial empty world state *)
 let emptyWorldState = {
     charsAlive = [ PlayerC ];
     charsDead = [];
@@ -69,6 +86,7 @@ let emptyWorldState = {
     allItems = [];
 };;
 
+(* Given a list of world entries, obtained from parsing, populate the world state with the starting data *)
 let rec populateWorldState worldData world = match worldData with
     | [] -> Right world
     | worldE :: worldData' -> let recurse = populateWorldState worldData' in ( match worldE with
@@ -98,11 +116,13 @@ let rec populateWorldState worldData world = match worldData with
             | Some _ -> Left "Error: NPC's vulnerability was set twice")
     );;
 
+(* Process the entire AST into a world state starting from the empty state *)
 let buildWorldState ast =
     match populateWorldState ast.world emptyWorldState with
         | Left err -> Left err
         | Right populated -> Right { populated with subquests = ast.subquests };;
 
+(* evaluate parameter expressions into parameter results (Right) or return error message (Left) *)
 let rec evalParamExp ws e = match e with
     | LocationExp loc -> Right (LocationRes loc)
     | ItemExp item -> Right (ItemRes item)
@@ -144,10 +164,15 @@ let rec evalParamExp ws e = match e with
             )
         in Right (CondRes (evalCond cond')));;
 
+(* Evaluate a quest q with the starting world state ws.
+   stepNo is an int used to track which instruction in the global quest
+   we're currently at for debugging purposes and to provide useful
+   feedback to the user for failing quests*)
 let [@warning "-11"] rec questEval q stepNo ws = match q with
     | [] -> Right (stepNo, ws)
     | qstep :: qs -> let recurse = questEval qs (stepNo + 1) in (
         match qstep with
+        (* Here we pattern match over all Actions the player can take and change the world state appropriately*)
         | ActionExp (act, e) -> (match evalParamExp ws e with
             | Left err -> Left (stepNo, err)
             | Right param -> (match (act, param) with
@@ -194,9 +219,12 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
                 )
             | _ -> Left (stepNo, "Basic action got the wrong type of input")
             ))
+        (* Bind a fresh variable to the value represented by the expression *)
         | LetExp (v, e) -> (match evalParamExp ws e with
             | Left err -> Left (stepNo, err)
             | Right param -> recurse (updateMemory ws (mapAdd (v, param))))
+        (* Run one of the previously defined subquests with the provided input and then return to
+           the calling point to continue execution *)
         | RunSubquestExp (sqname, args) -> (match mapLookup ws.subquests sqname with
             | None -> Left (stepNo, "Subquest not found")
             | Some (formalArgs, subq) ->
@@ -218,6 +246,10 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
         | _ -> Left (stepNo, "A typing error has occured")
     );;
 
+(* This function just bundles everything together, turning an AST into a string
+   representing the result of validation:
+   a success message for successful validation
+   an error message with details about what went wrong and where for a failed validation*)
 let evalAST ast = String.concat "" (List.map
     (fun mq -> match buildWorldState ast with
         | Left err -> "Error when validating world declaration: " ^ err ^ "\n"
