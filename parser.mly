@@ -6,6 +6,7 @@
                 TknLiteral TknLet TknArgumentLoc TknArgumentNPC TknArgumentItem
 %token TknWorld TknQuest TknLocation TknNPC TknItem TknAt TknRequire TknGoto
        TknGet TknKill TknUse TknEq TknGetLoc TknPlayer TknArgumentPlayer EOF
+       TknVulnerable TknTo
 
 %start main
 %type <Abstract_syntax_tree._ParserAST list> main
@@ -29,6 +30,7 @@ world:
     | TknNPC TknLiteral TknAt TknLiteral { CharWorldEntry (NPCLiteral $2, LocationLiteral $4) }
     | TknNPC TknPlayer TknAt TknLiteral { CharWorldEntry (PlayerC, LocationLiteral $4) }
     | TknItem TknLiteral TknAt TknLiteral { ItemWorldEntry ($2, LocationLiteral $4) }
+    | TknLiteral TknVulnerable TknTo itemList { VulnerabilityWorldEntry (NPCLiteral $1, $4) }
 
 questExprs:
     | quest questExprs { $1::$2 }
@@ -67,3 +69,11 @@ arg:
     | TknArgumentNPC { CharExp (NPCLiteral $1) }
     | TknArgumentPlayer { CharExp PlayerC }
     | TknArgumentItem { ItemExp $1 }
+
+itemList:
+    | itA itemList { $1::$2 }
+    | itA { [$1] }
+
+itA:
+    | TknArgument { $1 }
+    | TknArgumentItem { $1 }

@@ -4,6 +4,7 @@ World
   NPC Player at Forest
   NPC Wolf at Forest
   Item Sword at Desert
+  Wolf Vulnerable to (Sword)
 
 Subquest RoundTrip (location, item)
   let firstLoc = getloc Player

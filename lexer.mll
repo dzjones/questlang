@@ -19,7 +19,9 @@ rule token = parse
   | "NPC"           { TknNPC }
   | "Item"          { TknItem }
   | "Player"        { TknPlayer }
+  | "Vulnerable"    { TknVulnerable }
   | "at"            { TknAt }
+  | "to"            { TknTo }
   | "goto"          { TknGoto }
   | "get"           { TknGet }
   | "kill"          { TknKill }
@@ -46,8 +48,6 @@ and brackets = parse
   | "Item " (uppercase (letter | numeric | "'")* as literal) ")"? { TknArgumentItem literal }
   | ' '             { brackets lexbuf }
 
-
-(*  *)
 {
  let lextest s = token (Lexing.from_string s)
 
