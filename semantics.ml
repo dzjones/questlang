@@ -3,10 +3,12 @@ open Utils;;
 open Either;;
 open List;;
 
+(* The type of parameter results, returned by parameter expression evaluation *)
 type paramRes =
     | LocationRes of locationId
     | ItemRes of itemId
-    | CharRes of characterId;;
+    | CharRes of characterId
+    | CondRes of bool;;
 
 type playerType = {
     inventory : itemId list;
@@ -41,13 +43,13 @@ let unsafeSetNpcsAtPlayerLoc ws npcs = { ws with
 
 let rec searchItem worldMap item = match worldMap with
     | [] -> None
-    | (loc, (items, _)) :: rest -> if contains items item
+    | (loc, (items, _)) :: rest -> if mem item items
         then Some loc
         else searchItem rest item;;
 
 let rec searchNpc worldMap npc = match worldMap with
     | [] -> None
-    | (loc, (_, npcs)) :: rest -> if contains npcs npc
+    | (loc, (_, npcs)) :: rest -> if mem npc npcs
         then Some loc
         else searchNpc rest npc;;
 
@@ -123,7 +125,24 @@ let rec evalParamExp ws e = match e with
             | None -> Left "Item not found"
             | Some loc -> Right (LocationRes loc)
             )
-        );;
+        | Right (CondRes _) -> Left "Cannot get the location of a condition"
+        )
+    | CondExp cond' -> (let rec evalCond cond = match cond with
+        | CondAnd (cond1, cond2) -> evalCond cond1 && evalCond cond2
+        | CondOr (cond1, cond2) -> evalCond cond1 || evalCond cond2
+        | CondImplies (cond1, cond2) -> (not (evalCond cond1)) || evalCond cond2
+        | CondNot nCond -> not (evalCond nCond)
+        | CondPred prd -> (match prd with
+            | HeldPred item -> mem item ws.player.inventory
+            | DeadPred chr -> mem chr ws.charsDead
+            | AlivePred chr -> mem chr ws.charsAlive
+            | AtPred (PlayerC, loc) -> ws.player.location = loc
+            | AtPred (npc, loc) -> (match mapLookup ws.worldMap loc with
+                | Some (_, npcs) -> mem npc npcs
+                | _ -> false
+                )
+            )
+        in Right (CondRes (evalCond cond')));;
 
 let [@warning "-11"] rec questEval q stepNo ws = match q with
     | [] -> Right (stepNo, ws)
@@ -132,8 +151,12 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
         | ActionExp (act, e) -> (match evalParamExp ws e with
             | Left err -> Left (stepNo, err)
             | Right param -> (match (act, param) with
+            | (Require, (CondRes b)) -> if b
+                then recurse ws
+                else Left (stepNo, "Condition is not satisfied")
+            (*The pattern below is left in for backwards compatibility*)
             | (Require, (ItemRes itm)) ->
-                if contains ws.player.inventory itm
+                if mem itm ws.player.inventory
                     then recurse ws
                     else Left (stepNo, "Required item not held by player")
             | (Goto, (LocationRes loc)) -> recurse { ws with player = { ws.player with location = loc } }

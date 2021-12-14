@@ -13,12 +13,26 @@ type characterId = NPCLiteral of string | PlayerC;;
 type itemId = string;;
 type subquestId = string;;
 
+type predicate =
+    | HeldPred of itemId
+    | DeadPred of characterId
+    | AlivePred of characterId
+    | AtPred of characterId * locationId;;
+
+type condition =
+    | CondAnd of condition * condition
+    | CondOr of condition * condition
+    | CondImplies of condition * condition
+    | CondNot of condition
+    | CondPred of predicate;;
+
 type paramExp =
     | VarExp of var
     | LocationExp of locationId
     | ItemExp of itemId
     | CharExp of characterId
-    | GetLoc of paramExp;;
+    | GetLoc of paramExp
+    | CondExp of condition;;
 
 type worldEntry =
     | CharWorldEntry of characterId * locationId
