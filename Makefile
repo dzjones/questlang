@@ -1,6 +1,6 @@
 LIB_RAW = utils.ml abstract_syntax_tree.ml lexer.mll parser.mly semantics.ml validate.ml
 LIB = utils.ml abstract_syntax_tree.ml parser.mli lexer.ml parser.ml semantics.ml validate.ml
-TEST_FILES = quest-example
+TEST_FILES = quest-example quest-example-2 quest-example-3 quest-example-4
 
 questlang: $(LIB_RAW)
 	ocamlyacc parser.mly
