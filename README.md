@@ -29,4 +29,4 @@ To clean up the project directory run `make clean`
 * `require` - Checks if the player holds a certain item
 
 
-Please report and issues with this tool on it's GitHub page: https://github.com/dzjones/questlang/issues
+Please report any issues with this tool on it's GitHub page: https://github.com/dzjones/questlang/issues
