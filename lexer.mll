@@ -22,6 +22,14 @@ rule token = parse
   | "Vulnerable"    { TknVulnerable }
   | "at"            { TknAt }
   | "to"            { TknTo }
+  | "and"           { TknAnd }
+  | "or"            { TknOr }
+  | "Holding"       { TknHolding }
+  | "is Alive"      { TknIsAlive }
+  | "is Dead"       { TknIsDead }
+  | "is at"         { TknIsAt }
+  | "=>"            { TknImplies }
+  | "not"           { TknNot }
   | "goto"          { TknGoto }
   | "get"           { TknGet }
   | "kill"          { TknKill }
@@ -37,6 +45,8 @@ rule token = parse
   | ")"             { raise (Failure "mismatched bracket!") }
   | "("             { brackets lexbuf }
   | ","             { brackets lexbuf }
+  | "["             { TknLBrac }
+  | "]"             { TknRBrac }
 and brackets = parse
   | ")"             { token lexbuf }
   | "("             { raise (Failure "brackets can only be one level deep") }

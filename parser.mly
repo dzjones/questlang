@@ -6,7 +6,10 @@
                 TknLiteral TknLet TknArgumentLoc TknArgumentNPC TknArgumentItem
 %token TknWorld TknQuest TknLocation TknNPC TknItem TknAt TknRequire TknGoto
        TknGet TknKill TknUse TknEq TknGetLoc TknPlayer TknArgumentPlayer EOF
-       TknVulnerable TknTo
+       TknVulnerable TknTo TknAnd TknOr TknImplies TknNot TknLBrac TknRBrac
+       TknHolding TknIsAlive TknIsDead TknIsAt
+
+%left TknAnd TknOr TknImplies
 
 %start main
 %type <Abstract_syntax_tree._ParserAST list> main
@@ -32,6 +35,24 @@ world:
     | TknItem TknLiteral TknAt TknLiteral { ItemWorldEntry ($2, LocationLiteral $4) }
     | TknLiteral TknVulnerable TknTo itemList { VulnerabilityWorldEntry (NPCLiteral $1, $4) }
 
+predicateExp:
+    | TknHolding TknLiteral { HeldPred $2 }
+    | TknLiteral TknIsAlive { DeadPred (NPCLiteral $1) }
+    | TknLiteral TknIsDead  { AlivePred (NPCLiteral $1) }
+    | TknLiteral TknIsAt TknLiteral { AtPred (NPCLiteral $1, LocationLiteral $3) }
+    | TknPlayer TknIsAt TknLiteral { AtPred (PlayerC, LocationLiteral $3) }
+
+conditionExp:
+    | conditionExp TknAnd conditionExp { CondAnd ($1, $3) }
+    | conditionExp TknOr conditionExp { CondOr ($1, $3) }
+    | conditionExp TknImplies conditionExp { CondImplies ($1, $3) }
+    | TknNot conditionExp  { CondNot $2 }
+    | conditionExpAtomic { $1 }
+
+conditionExpAtomic:
+    | TknLBrac conditionExp TknRBrac { $2 }
+    | predicateExp { CondPred $1 }
+
 questExprs:
     | quest questExprs { $1::$2 }
     | quest { [$1] }
@@ -41,6 +62,7 @@ quest:
     | TknGet TknLiteral { ActionExp (Get, (ItemExp $2)) }
     | TknKill TknLiteral { ActionExp (Kill, (CharExp (NPCLiteral $2))) }
     | TknRequire TknLiteral { ActionExp (Require, (ItemExp $2)) }
+    | TknRequire TknLBrac conditionExp TknRBrac { ActionExp (Require, CondExp $3) }
     | TknUse TknLiteral { ActionExp (Use, (ItemExp $2)) }
     | TknGoto TknVar { ActionExp (Goto, (VarExp $2)) }
     | TknGet TknVar { ActionExp (Get, (VarExp $2)) }
