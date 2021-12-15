@@ -12,15 +12,21 @@ TODO
 # Implementation
 
 The project consists of 2 separate parts: the **Questlang** lexer/parser and the quest validator (performing semantic evaluation on an Abstract Syntax Tree). Each of these 2 parts can be swapped for another piece of code, without affecting the other part. The only point where the 2 parts join together is in the definition of the Abstract Syntax Tree (in `abstract_syntax_tree.ml`).
+
 The workload for this project was mainly split in two with Mircea Sebe working on the quest validator and Dominic Jones working on the lexer and parser, and both of us working on documentation, tests, Makefile, reports and code review. After agreeing on the structure of the AST we were both able to do most of the work asynchronously and independently.
+
 The AST went through 3 iterations before converging on it’s current form, and after integrating lessons from the class. One such lesson was why it would be better to have the Actions as part of their own `unaryAction` type that then is *’d with it’s argument, rather than have an overarching Actions type with parametric constructors for each action.
+
 An interesting task was also deciding what each action should do. In the end we went with what seemed most sensible and interesting to us.
+
 The compiling and testing frameworks are encapsulated in the project’s Makefile. The repository consists of a set of `.ml` files that comprise a library (`LIB`). In order to generate the main project executable, `questlang`, the library files are compiled using `ocamlopt` together with `main.ml` which is the entry point of our application.
 
 ## Testing
 
 In order to do unit testing, we can create another `.ml` file (`semantics_tester.ml`) that is compiled and run against the same library. In the case of `semantics_tester.ml`, we define some ASTs by hand and check the validation message that we get after validation with the expected message. See the comments in the respective file for more information on that.
+
 In order to do integration testing, we will evaluate quests (`TEST_FILES` in the Makefile) written directly in Questlang and compare the output of this validation to the associated `.out.golden` file (using `diff`).
+
 Both unit and integration testing are performed by running `make test` which will end in a return code of 0 and print no red error messages when everything works fine.
 
 ## Repository Structure
@@ -28,8 +34,11 @@ Both unit and integration testing are performed by running `make test` which wil
 All source files, test files, executables and infrastructure files reside in the top level directory. Given the scale of this project, we didn't find this to be a problem but if the project continues to grow, we will consider separating the source, test files and generated executables into their own subdirectories.
 
 The Questlang lexer is defined in `lexer.mll`.
+
 The Questlang parser is defined in `parser.mly`.
+
 All the validation of an already built AST happens in `semantics.ml`.
+
 `utils.ml` and `validate.ml` just provide us with some useful functions.
 
 ## Project Goals
@@ -37,7 +46,9 @@ All the validation of an already built AST happens in `semantics.ml`.
 The project is currently functional and able to take an arbitrary Questlang file to a validation report. There currently are no known bugs in the code.
 
 The project proposal was open ended to the extent to which we would implement the original paper that this project is based off of, with the two of us aiming towards implementing as much of it as we could in the alloted time.
+
 While we didn't implement many of the basic Actions specified in the original paper, we successfully implemented a very expressive subset of it, encapsulating what amounts to function calls, local variable bindings, complex logical expressions and more. We believe that expanding upon the semantics of our current Actions and adding new Actions would be a routine task given the framework that we currently have in place.
+
 One shortcoming of the project is the lack for the user to specify what "using" an item should do. At the moment, "using" an item will just check that the player has it and then discard it. But this basic Action can be used in tandem with other Actions and subquests to achieve more expressive semantics. For instance, a subquest could be defined as follows:
 ```
 Subquest UseTeleportPotion ()
