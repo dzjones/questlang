@@ -16,6 +16,10 @@ Subquest RoundTrip (location, item)
   get item
   goto firstLoc
 
+Subquest RoundTripTwice (locationA, itemA, locationB, itemB)
+  run RoundTrip (locationA, itemA)
+  run RoundTrip (locationB, itemB)
+
 Quest
   run RoundTrip (Location Tundra, Item Amulet)
   run RoundTrip (Location Desert, Item Sword)
@@ -23,5 +27,6 @@ Quest
   kill Wolf
 
 Quest
-  run RoundTrip (Location Desert, Item Sword)
+  run RoundTripTwice (Location Tundra, Item Amulet, Location Desert, Item Sword)
   kill Wolf
+  require [Wolf is Dead]

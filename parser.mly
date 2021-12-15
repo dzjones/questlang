@@ -103,6 +103,7 @@ argumentList:
 /* Type-hinted arguments for that argument list */
 arg:
     | TknArgument { VarExp $1 }
+    | TknFormalParam { VarExp $1 }
     | TknArgumentLoc { LocationExp (LocationLiteral $1) }
     | TknArgumentNPC { CharExp (NPCLiteral $1) }
     | TknArgumentPlayer { CharExp PlayerC }
