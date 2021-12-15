@@ -15,4 +15,4 @@ Subquest RoundTrip (location, item)
 Quest
   run RoundTrip (Location Desert, Item Sword)
   kill Wolf
-  require [Wolf is Alive and Holding Sword]
+  require [Wolf is Dead and Holding Sword]
