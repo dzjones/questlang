@@ -4,16 +4,19 @@ open Parser;;
 
 }
 
+(* Some helper definitions, mostly for lowercaseId and uppercaseId *)
 let numeric = ['0' - '9']
 let lowercase = ['a' - 'z']
 let uppercase = ['A' - 'Z']
 let letter = ['a' - 'z' 'A' - 'Z' '_']
-let indent = "    "
+let lowercaseId = lowercase (letter | numeric | "'")*
+let uppercaseId = uppercase (letter | numeric | "'")*
 
+(* Main parser *)
 rule token = parse
-  | [' ' '\t' '\n'] { token lexbuf }  (* skip over whitespace *)
+  | [' ' '\t' '\n'] { token lexbuf } (* this language is whitespace agnostic *)
   | eof             { EOF }
-  | "World"         { TknWorld }
+  | "World"         { TknWorld } (* Language keywords *)
   | "Quest"         { TknQuest }
   | "Location"      { TknLocation }
   | "NPC"           { TknNPC }
@@ -35,42 +38,30 @@ rule token = parse
   | "kill"          { TknKill }
   | "require"       { TknRequire }
   | "use"           { TknUse }
-  | "let " (lowercase (letter | numeric | "'")* as var) { TknLet var }
+  | "let " (lowercaseId as var) { TknLet var } (* For let expressions *)
   | "="             { TknEq }
   | "getloc"        { TknGetLoc }
-  | "Subquest " (uppercase (letter | numeric | "'")* as subquest) { TknSubquest subquest }
-  | "run " (uppercase (letter | numeric | "'")* as subquest) { TknSubquestRun subquest }
-  | lowercase (letter | numeric | "'")* as var { TknVar var }
-  | uppercase (letter | numeric | "'")* as literal { TknLiteral literal }
+  | "Subquest " (uppercaseId as subquest) { TknSubquest subquest } (* Defining and running subquests *)
+  | "run " (uppercaseId as subquest) { TknSubquestRun subquest }
+  | lowercaseId as var { TknVar var }
+  | uppercaseId as literal { TknLiteral literal }
   | ")"             { raise (Failure "mismatched bracket!") }
   | "("             { brackets lexbuf }
   | ","             { brackets lexbuf }
   | "["             { TknLBrac }
   | "]"             { TknRBrac }
-and brackets = parse
+and brackets = parse (* This lets us assign special tokens to strings in parentheses/brackets *)
   | ")"             { token lexbuf }
   | "("             { raise (Failure "brackets can only be one level deep") }
-  | (lowercase (letter | numeric | "'")* as var) ")"? { TknFormalParam var }
-  | (uppercase (letter | numeric | "'")* as literal) ")"? { TknArgument literal }
-  | "Location " (uppercase (letter | numeric | "'")* as literal) ")"? { TknArgumentLoc literal }
-  | "NPC " (uppercase (letter | numeric | "'")* as literal) ")"? { TknArgumentNPC literal }
+  | (lowercaseId as var) ")"? { TknFormalParam var }
+  | (uppercaseId as literal) ")"? { TknArgument literal }
+  | "Location " (uppercaseId as literal) ")"? { TknArgumentLoc literal }
+  | "NPC " (uppercaseId as literal) ")"? { TknArgumentNPC literal }
   | "NPC Player" ")"? { TknArgumentPlayer }
-  | "Item " (uppercase (letter | numeric | "'")* as literal) ")"? { TknArgumentItem literal }
+  | "Item " (uppercaseId as literal) ")"? { TknArgumentItem literal }
   | ' '             { brackets lexbuf }
 
 {
- let lextest s = token (Lexing.from_string s)
 
- let get_all_tokens s =
-     let b = Lexing.from_string (s^"\n") in
-     let rec g () = 
-     match token b with EOF -> []
-     | t -> t :: g () in
-     g ()
-
-let try_get_all_tokens s =
-    try (Some (get_all_tokens s), true)
-    with Failure "unmatched open comment" -> (None, true)
-       | Failure "unmatched closed comment" -> (None, false)
  }
 
