@@ -19,7 +19,7 @@ The AST went through 3 iterations before converging on it’s current form, and 
 
 An interesting task was also deciding what each action should do. In the end we went with what seemed most sensible and interesting to us.
 
-The compiling and testing frameworks are encapsulated in the project’s Makefile. The repository consists of a set of `.ml` files that comprise a library (`LIB`). In order to generate the main project executable, `questlang`, the library files are compiled using `ocamlopt` together with `main.ml` which is the entry point of our application.
+The compiling and testing frameworks are encapsulated in the project’s `Makefile`. The repository consists of a set of `.ml` files that comprise a library (`LIB`). In order to generate the main project executable, `questlang`, the library files are compiled using `ocamlopt` together with `main.ml` which is the entry point of our application.
 
 ## Testing
 
@@ -49,7 +49,7 @@ The project proposal was open ended to the extent to which we would implement th
 
 While we didn't implement many of the basic Actions specified in the original paper, we successfully implemented a very expressive subset of it, encapsulating what amounts to function calls, local variable bindings, complex logical expressions and more. We believe that expanding upon the semantics of our current Actions and adding new Actions would be a routine task given the framework that we currently have in place.
 
-One shortcoming of the project is the lack for the user to specify what "using" an item should do. At the moment, "using" an item will just check that the player has it and then discard it. But this basic Action can be used in tandem with other Actions and subquests to achieve more expressive semantics. For instance, a subquest could be defined as follows:
+One shortcoming of the project is the lack of a way for the user to specify what "using" an item should do. At the moment, "using" an item will just check that the player has it and then discard it. But this basic Action can be used in tandem with other Actions and subquests to achieve more expressive semantics. For instance, a subquest could be defined as follows:
 ```
 Subquest UseTeleportPotion ()
   use TeleportPotion
