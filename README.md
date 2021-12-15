@@ -26,7 +26,7 @@ To clean up the project directory run `make clean`
 * `get` - Tries to collect an item and add it to the player's inventory if it is at the player's location
 * `kill` - Kills a monster if it is at the player's location
 * `use` - Uses up one of the player's held items
-* `require` - Checks if the player holds a certain item
+* `require` - Checks if a certain predicate about the world is true
 
 
 Please report any issues with this tool on it's GitHub page: https://github.com/dzjones/questlang/issues
