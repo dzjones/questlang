@@ -6,16 +6,27 @@ by *Octavian-Mircea Sebe* and *Dominic Jones*
 
 # Overview
 
-TODO
-* mention paper that we started from
+In interactive fiction and computer games, it is common to have content structured around the idea of a quest. A quest is an objective given to a player, usually a set sequence of commands that must be fulfilled. A quest may be modelled as a context free grammar, per [Doran & Parberry 2011](http://ianparberry.com/pubs/pcg2011.pdf). Trivial tasks (e.g. travel, pick up, or talk) are represented by terminals and non-trivial, or compound, tasks are represented by nonterminal (e.g. a heist). Each of these terminals and non-terminals may have arbitrary data associated with them, essentially variables which bind to objects in the world.
+
+This is an effective model for the generation of quests, useful for automatically creating new content on-the-fly for players without author intervention. However, this approach may also be used to validate human-authored quests. A quest, and its actions, should adhere to some internal logic of a world. If it does not, this can cause bugs, resulting in quests that are impossible to complete, ruining a player's experience. If a player cannot complete a quest, a designer would ideally desire feedback as to why. We can think of the quest as a programme written in this quest language, with the game environment corresponding to a programme environment and the quest tree modelled recovered from a lexing and parsing task. Finally, given clear semantics an execution model may be defined which will either execute successfully (e.g. the quest is completable) or fail, indicating why.
+
+We proposed to implement this language to answer the question above: given a description of a game environment and a quest in the language, is this quest completable? If not, what prevents the quest from being valid? We describe our language below.
+
+Note an important point of difference between our language and [Doran & Parberry 2011](http://ianparberry.com/pubs/pcg2011.pdf): due to this language being intended for validation of human-authored quests, we jettison the motivational nonterminals and introduce author-defined subquests to sensibly group atomic actions.
 
 # Implementation
 
 The project consists of 2 separate parts: the **Questlang** lexer/parser and the quest validator (performing semantic evaluation on an Abstract Syntax Tree). Each of these 2 parts can be swapped for another piece of code, without affecting the other part. The only point where the 2 parts join together is in the definition of the Abstract Syntax Tree (in `abstract_syntax_tree.ml`).
 
+Other major components include `lexer.mll` and `parser.mly`: the lexer and parser respectively. `semantics.ml` implements the validator itself, `validate.ml` contains some code to further parse the AST into a format that finally is processed. `main.ml` is the entry point into the programme. See the repository structure section for more information.
+
+We have implemented the main goal: that of a quest validator. It contains a small but flexible set of atomic quest actions: goto, get, kill, use, and require, which we believe covers the vast majority of actions in interactive fiction (e.g. RPG) games. The language also includes logical predicates to be used with the `require` action (a simple form of polymorphismm because it also takes items), and as mentioned above, user-defined parametrised subquests which may be used and reused in a quest.
+
+We did not implement the motivation nonterminals (e.g. wealth, protection) mentioned in the paper, because we found that such a structure was more useful for generation than validation. We pared back the set of atomic actions to something we believe reflects most of the content in games and that authors would find useful. Differing from the paper, we did implement logic and user-defined subquests. See the goals section for more information.
+
 The workload for this project was mainly split in two with Mircea Sebe working on the quest validator and Dominic Jones working on the lexer and parser, and both of us working on documentation, tests, Makefile, reports and code review. After agreeing on the structure of the AST we were both able to do most of the work asynchronously and independently.
 
-The AST went through 3 iterations before converging on it’s current form, and after integrating lessons from the class. One such lesson was why it would be better to have the Actions as part of their own `unaryAction` type that then is *’d with it’s argument, rather than have an overarching Actions type with parametric constructors for each action.
+The AST went through 3 iterations before converging on its current form, and after integrating lessons from the class. One such lesson was why it would be better to have the Actions as part of their own `unaryAction` type which is combined in a tuple with its argument (e.g. `Kill * Wolf`), rather than have an overarching Actions type with parametric constructors for each action.
 
 An interesting task was also deciding what each action should do. In the end we went with what seemed most sensible and interesting to us.
 
@@ -28,6 +39,12 @@ In order to do unit testing, we can create another `.ml` file (`semantics_tester
 In order to do integration testing, we will evaluate quests (`TEST_FILES` in the Makefile) written directly in Questlang and compare the output of this validation to the associated `.out.golden` file (using `diff`).
 
 Both unit and integration testing are performed by running `make test` which will end in a return code of 0 and print no red error messages when everything works fine.
+
+Our tests are structured to test each feature of the language we implement. For example,
+
+* `quest-example.ql`: tests basic world construction, subquest definition, built-in functions, parameters and arguments, the atomic actions themselves, and logic.
+* `quest-example-2.ql`: further tests the subquest system.
+* `quest-example-3.ql`: further tests the subquest system, including subquests referencing other subquests. Tests multiple world and main quest definitions in one file.
 
 ## Repository Structure
 
@@ -58,6 +75,24 @@ Subquest UseTeleportPotion ()
 and running this quest will simulate the use of a teleportation potion.
 
 In conclusion, we believe that the project shines in creating a framework that is easy to extend, easy to use, and very informative to a user looking to develop a quest for a video game or just to have fun.
+
+## Usage
+
+To use this tool:
+1. Run `make`
+2. (optional) Run `make test` to run the unit and integration tests
+3. Run `./questlang my-quest.ql` to validate a quest written in questlang, stored in `my-quest.ql`
+
+See `quest-example.ql` for a sample questlang file.
+
+To clean up the project directory run `make clean`
+
+## Actions
+* `goto` - Changes the player's current location
+* `get` - Tries to collect an item and add it to the player's inventory if it is at the player's location
+* `kill` - Kills a monster if it is at the player's location
+* `use` - Uses up one of the player's held items
+* `require` - Checks if a certain predicate about the world is true
 
 # Code listing
 

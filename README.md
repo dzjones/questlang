@@ -29,4 +29,4 @@ To clean up the project directory run `make clean`
 * `require` - Checks if a certain predicate about the world is true
 
 
-Please report any issues with this tool on it's GitHub page: https://github.com/dzjones/questlang/issues
+Please report any issues with this tool on its GitHub page: https://github.com/dzjones/questlang/issues
