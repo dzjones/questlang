@@ -10,7 +10,11 @@
        TknVulnerable TknTo TknAnd TknOr TknImplies TknNot TknLBrac TknRBrac
        TknHolding TknIsAlive TknIsDead TknIsAt
 
-%left TknAnd TknOr TknImplies /* Helps us get rid of some ambiguity */
+/* Helps us get rid of some ambiguity */
+%left TknImplies
+%left TknOr
+%left TknAnd
+%nonassoc TknNot
 
 %start main
 %type <Abstract_syntax_tree._ParserAST list> main
@@ -26,7 +30,9 @@ main:
     | TknSubquest parameterList questExprs main { (ParserSubquestExp ($1, ($2, $3)))::$4 }
     | TknSubquest parameterList questExprs { [ParserSubquestExp ($1, ($2, $3))] }
 
-/* Wrapper nonterminal for the list of world entries */
+/* Wrapper nonterminal for the list of world entries
+    We use this pattern a lot in this parser: representing a level of a parse
+    tree as a list is effective for the sorts of programmes we write. */
 worldExprs:
     | world worldExprs { $1::$2 }
     | world { [$1] }
@@ -65,7 +71,9 @@ questExprs:
     | quest questExprs { $1::$2 }
     | quest { [$1] }
 
-/* Atomic quest actions */
+/* Atomic quest actions
+    Note that they can take both literals and variables
+    both have differing implications for the AST, so we handle them all here */
 quest:
     | TknGoto TknLiteral { ActionExp (Goto, (LocationExp (LocationLiteral $2))) }
     | TknGet TknLiteral { ActionExp (Get, (ItemExp $2)) }
@@ -83,7 +91,7 @@ quest:
 
 /* Support for builtin functions here
     Worth talking a little as to why this is in the parser and not the language
-    semantics -- basically, super simple functions
+    semantics -- basically, super simple language functionality
 */
 builtinFunExp:
     | TknGetLoc TknLiteral { GetLoc (CharExp (NPCLiteral $2)) }
@@ -109,7 +117,7 @@ arg:
     | TknArgumentPlayer { CharExp PlayerC }
     | TknArgumentItem { ItemExp $1 }
 
-/* A list of items for the vulnerability token */
+/* A list of items for the vulnerability token: e.g. Wolf Vulnerable to (Sword) */
 itemList:
     | itA itemList { $1::$2 }
     | itA { [$1] }

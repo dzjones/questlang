@@ -96,6 +96,16 @@ To clean up the project directory run `make clean`
 
 # Code listing
 
+As a PDF (or HTML document) is not the most appropriate format for viewing code, we reproduce select samples of code here. All of the files in the codebase are commented, which should suffice as a code listing, and we suggest that you peruse them in this order:
+
+1. `abstract_syntax_tree.ml`: a definition of our AST in OCaml types.
+2. `lexer.mll`: The lexer.
+3. `parser.mly`: The parser.
+4. `semantics.ml`: The core of the quest validator.
+5. `semantics_tester.ml`: Testing just for the semantics.
+6. `validate.ml`: Some helper code belonging after parsing but before evaluation.
+7. `utils.ml` and `main.ml`: Utilities and our main entry point.
+
 Definition of the AST from `abstract_syntax_tree.ml`:
 ```
 type var = string;;
@@ -224,15 +234,20 @@ let rec populateWorldState worldData world = match worldData with
 
 Snippet from our parser, from `parser.mly`:
 ```
+/* Like the worldExprs nonterminal, allows concatenation of quest actions into a list */
 questExprs:
     | quest questExprs { $1::$2 }
     | quest { [$1] }
 
+/* Atomic quest actions
+    Note that they can take both literals and variables
+    both have differing implications for the AST, so we handle them all here */
 quest:
     | TknGoto TknLiteral { ActionExp (Goto, (LocationExp (LocationLiteral $2))) }
     | TknGet TknLiteral { ActionExp (Get, (ItemExp $2)) }
     | TknKill TknLiteral { ActionExp (Kill, (CharExp (NPCLiteral $2))) }
     | TknRequire TknLiteral { ActionExp (Require, (ItemExp $2)) }
+    | TknRequire TknLBrac conditionExp TknRBrac { ActionExp (Require, CondExp $3) }
     | TknUse TknLiteral { ActionExp (Use, (ItemExp $2)) }
     | TknGoto TknVar { ActionExp (Goto, (VarExp $2)) }
     | TknGet TknVar { ActionExp (Get, (VarExp $2)) }

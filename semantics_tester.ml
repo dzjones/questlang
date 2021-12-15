@@ -2,33 +2,8 @@ open Abstract_syntax_tree;;
 open Semantics;;
 
 (*
-World
-    location Forest
-    location Desert
-    npc Player at Forest
-    npc Wolf at Forest
-    item Sword at Desert
-
-Quest
-    goto Desert
-    get Sword
-    goto Forest
-    kill Wolf
-
-hypotheticals:
-
-(a)
-(a, b)
-
-Subquest RoundTrip (location, item)
-    let firstLoc = getloc Player
-    goto location
-    get item
-    goto firstLoc
-
-Quest
-    run RoundTrip (Desert, Sword)
-    kill Wolf
+    Here we define some sample ASTs in raw form, so we can test the semantics
+    functions without having to update the lexer and parser in concert.
 *)
 
 let exampleWorldAST = [
@@ -47,7 +22,7 @@ let exampleQuestAST = [
     ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
 ];;
 
-let exampleBadQuestAST = [
+let exampleBadQuestAST = [ (* This AST is meant to fail *)
     ActionExp (Goto, (LocationExp (LocationLiteral "Desert")));
     ActionExp (Get, (ItemExp "Sword"));
     ActionExp (Kill, (CharExp (NPCLiteral "Wolf")))
