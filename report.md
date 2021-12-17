@@ -1,8 +1,9 @@
 # **Questlang: a language for verifying quest specifications**
 
-A project for CS 421: Programming Languages and Compilers
+A project for CS 421: Programming Languages and Compilers (Fa2021)
 
-by *Octavian-Mircea Sebe* and *Dominic Jones*
+by *Octavian-Mircea Sebe* (osebe2) and *Dominic Jones* (dzjones2)
+15 Dec 2021
 
 # Overview
 
