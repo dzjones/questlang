@@ -126,6 +126,8 @@ let _ = testAST
     fullBadAST1
     "Simple invalid quest";;
 
+let _ = print_string "\n\nUnit testing the lexer/parser...\n\n";;
+
 let _ = testParsing fullAST1 fullQl1 "Simple quest parsing";;
 let _ = testParsing fullAST2 fullQl2 "Simple quest using subquests parsing";;
 let _ = testParsing fullBadAST1 fullQl1Bad "Simple bad quest parsing";;
