@@ -35,7 +35,7 @@ The compiling and testing frameworks are encapsulated in the project’s `Makefi
 
 ## Testing
 
-In order to do unit testing, we can create another `.ml` file (`semantics_tester.ml`) that is compiled and run against the same library. In the case of `semantics_tester.ml`, we define some ASTs by hand and check the validation message that we get after validation with the expected message. See the comments in the respective file for more information on that.
+In order to do unit testing, we can create another `.ml` file (`semantics_tester.ml`) that is compiled and run against the same library. In the case of `semantics_tester.ml`, we define some ASTs by hand and check the validation message that we get after validation with the expected message. See the comments in the respective file for more information on that. We also do unit testing on the lexer/parser by checking that we get the expected AST's from parsing strings written in Questlang representing teh respective AST.
 
 In order to do integration testing, we will evaluate quests (`TEST_FILES` in the Makefile) written directly in Questlang and compare the output of this validation to the associated `.out.golden` file (using `diff`).
 
@@ -103,7 +103,7 @@ As a PDF (or HTML document) is not the most appropriate format for viewing code,
 2. `lexer.mll`: The lexer.
 3. `parser.mly`: The parser.
 4. `semantics.ml`: The core of the quest validator.
-5. `semantics_tester.ml`: Testing just for the semantics.
+5. `semantics_tester.ml`: Unit tests for the parser and the validation.
 6. `validate.ml`: Some helper code belonging after parsing but before evaluation.
 7. `utils.ml` and `main.ml`: Utilities and our main entry point.
 

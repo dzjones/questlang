@@ -26,7 +26,7 @@ type locMap = (locationId * ((itemId list) * (characterId list))) list;;
     charsDead : characters killed
     player : see above
     worldMap : see above
-    subquests : list of subquests (constant)
+    subQuests : list of subquests (constant)
     memory : mapping of variables to values
     vulnerability : what each npc can be killed with
     allItems : list of all items in the world (constant)
@@ -36,7 +36,7 @@ type worldState = {
     charsDead : characterId list;
     player : playerType;
     worldMap : locMap;
-    subquests : subquestEntry list;
+    subQuests : subquestEntry list;
     memory : (var * paramRes) list;
     vulnerability : (characterId * (itemId list)) list;
     allItems : itemId list;
@@ -80,7 +80,7 @@ let emptyWorldState = {
         location = NullLocation
     };
     worldMap = [];
-    subquests = [];
+    subQuests = [];
     memory = [];
     vulnerability = [];
     allItems = [];
@@ -120,7 +120,7 @@ let rec populateWorldState worldData world = match worldData with
 let buildWorldState ast =
     match populateWorldState ast.world emptyWorldState with
         | Left err -> Left err
-        | Right populated -> Right { populated with subquests = ast.subquests };;
+        | Right populated -> Right { populated with subQuests = ast.subquests };;
 
 (* evaluate parameter expressions into parameter results (Right) or return error message (Left) *)
 let rec evalParamExp ws e = match e with
@@ -225,7 +225,7 @@ let [@warning "-11"] rec questEval q stepNo ws = match q with
             | Right param -> recurse (updateMemory ws (mapAdd (v, param))))
         (* Run one of the previously defined subquests with the provided input and then return to
            the calling point to continue execution *)
-        | RunSubquestExp (sqname, args) -> (match mapLookup ws.subquests sqname with
+        | RunSubquestExp (sqname, args) -> (match mapLookup ws.subQuests sqname with
             | None -> Left (stepNo, "Subquest not found")
             | Some (formalArgs, subq) ->
                 let oldMemory = ws.memory in
