@@ -28,13 +28,15 @@ let findSubquests = List.fold_left
     | _ -> qs
   ) []
 
+(* The parser uses cons left -> right, so we need to reverse the list of quests
+    to ensure the output reflects the order the user defined the quests. *)
 let buildFullAST parserResult =
   let completeWorld = findWorld parserResult in
   let subquests = findSubquests parserResult in
   let mainQuests = findMainQuests parserResult in {
     Abstract_syntax_tree.world = completeWorld;
     Abstract_syntax_tree.subquests = subquests;
-    Abstract_syntax_tree.mainQuests = mainQuests;
+    Abstract_syntax_tree.mainQuests = List.rev (mainQuests);
   };;
 
 (* This function takes a path to a questlang file, and just successively lexes it,

@@ -29,4 +29,4 @@ Quest
 Quest
   run RoundTripTwice (Location Tundra, Item Amulet, Location Desert, Item Sword)
   kill Wolf
-  require [Wolf is Dead]
+  require [Wolf is Alive]
